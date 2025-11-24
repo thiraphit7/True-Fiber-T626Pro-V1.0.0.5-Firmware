@@ -63,7 +63,12 @@ REMAINDER=$((SQUASHFS_SIZE % BLOCK_SIZE_BYTES))
 if [ $REMAINDER -ne 0 ]; then
     PADDING=$((BLOCK_SIZE_BYTES - REMAINDER))
     echo -e "${YELLOW}Adding ${PADDING} bytes of padding to align to ${BLOCK_SIZE}KB blocks${NC}"
-    dd if=/dev/zero bs=1 count=$PADDING >> "$TEMP_SQUASHFS" 2>/dev/null
+    dd if=/dev/zero bs=1024 count=$((PADDING / 1024)) >> "$TEMP_SQUASHFS" 2>/dev/null
+    # Add remaining bytes if padding is not a multiple of 1024
+    PADDING_REMAINDER=$((PADDING % 1024))
+    if [ $PADDING_REMAINDER -ne 0 ]; then
+        dd if=/dev/zero bs=1 count=$PADDING_REMAINDER >> "$TEMP_SQUASHFS" 2>/dev/null
+    fi
 fi
 
 # Step 3: Add JFFS2 EOF marker for automatic bad block skipping
@@ -80,11 +85,15 @@ create_jffs2_eof_marker() {
     local marker_size=$((pagesize * 16))  # 16 pages of markers
     
     # Create EOF marker pattern
-    # Using a repeating pattern that indicates end of filesystem
+    # Using a repeating 0xdeadc0de pattern that indicates end of filesystem
     local temp_marker=$(mktemp)
+    if [ ! -f "$temp_marker" ]; then
+        echo -e "${RED}Error: Failed to create temporary file${NC}"
+        exit 1
+    fi
     
-    # JFFS2 uses 0xdeadc0de as magic marker, followed by padding
-    # For NAND flash, we need to fill with 0xFF (erased state)
+    # JFFS2 uses 0xdeadc0de as magic marker repeated throughout the marker area
+    # This pattern signals the end of the filesystem to the MTD driver
     for i in $(seq 1 $((marker_size / 4))); do
         printf '\xde\xad\xc0\xde' >> "$temp_marker"
     done
