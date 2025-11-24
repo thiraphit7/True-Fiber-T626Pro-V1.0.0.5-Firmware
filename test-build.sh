@@ -5,6 +5,18 @@
 
 set -e
 
+# Cross-platform file size function
+get_file_size() {
+    local file=$1
+    if [[ "$OSTYPE" == "darwin"* ]] || [[ "$(uname -s)" == "Darwin" ]]; then
+        # macOS
+        stat -f%z "$file"
+    else
+        # Linux and others
+        stat -c%s "$file"
+    fi
+}
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -63,8 +75,8 @@ fi
 # Summary
 echo -e "\n${GREEN}=== All Tests Passed ===${NC}"
 echo -e "${GREEN}Firmware file: T626Pro-squashfs-sysupgrade.bin${NC}"
-FILE_SIZE=$(stat -c%s T626Pro-squashfs-sysupgrade.bin)
-echo -e "${GREEN}Size: $(numfmt --to=iec-i --suffix=B $FILE_SIZE)${NC}"
+FILE_SIZE=$(get_file_size T626Pro-squashfs-sysupgrade.bin)
+echo -e "${GREEN}Size: $(numfmt --to=iec-i --suffix=B $FILE_SIZE 2>/dev/null || echo "$((FILE_SIZE / 1024 / 1024))MB")${NC}"
 echo ""
 
 # Cleanup test build
