@@ -1,0 +1,15 @@
+# Build artifacts
+*.bin
+*.squashfs
+squashfs-root-2.squashfs
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+
+# Editor files
+*.swp
+*.swo
+*~
+.DS_Store
