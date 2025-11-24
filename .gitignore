@@ -1,7 +1,9 @@
-# Build artifacts
-*.bin
+# Build artifacts (except the release firmware)
 *.squashfs
 squashfs-root-2.squashfs
+
+# Allow the built firmware to be committed
+!T626Pro-squashfs-sysupgrade.bin
 
 # Temporary files
 *.tmp

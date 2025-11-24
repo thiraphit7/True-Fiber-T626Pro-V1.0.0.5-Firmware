@@ -14,6 +14,18 @@ TEMP_SQUASHFS="squashfs-root-2.squashfs"
 BLOCK_SIZE=128  # 128KB block size (common for NAND flash)
 PAGESIZE=2048   # 2KB page size (common for NAND flash)
 
+# Cross-platform file size function
+get_file_size() {
+    local file=$1
+    if [[ "$OSTYPE" == "darwin"* ]] || [[ "$(uname -s)" == "Darwin" ]]; then
+        # macOS
+        stat -f%z "$file"
+    else
+        # Linux and others
+        stat -c%s "$file"
+    fi
+}
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -50,8 +62,8 @@ if [ ! -f "$TEMP_SQUASHFS" ]; then
     exit 1
 fi
 
-SQUASHFS_SIZE=$(stat -c%s "$TEMP_SQUASHFS")
-echo -e "${GREEN}Squashfs image created: $(numfmt --to=iec-i --suffix=B $SQUASHFS_SIZE)${NC}"
+SQUASHFS_SIZE=$(get_file_size "$TEMP_SQUASHFS")
+echo -e "${GREEN}Squashfs image created: $(numfmt --to=iec-i --suffix=B $SQUASHFS_SIZE 2>/dev/null || echo "$((SQUASHFS_SIZE / 1024 / 1024))MB")${NC}"
 
 # Step 2: Add padding for bad block handling
 echo -e "${GREEN}[2/3] Adding bad block padding...${NC}"
@@ -109,10 +121,10 @@ create_jffs2_eof_marker "$TEMP_SQUASHFS" $PAGESIZE
 # Rename to final output file
 mv "$TEMP_SQUASHFS" "$OUTPUT_FILE"
 
-FINAL_SIZE=$(stat -c%s "$OUTPUT_FILE")
+FINAL_SIZE=$(get_file_size "$OUTPUT_FILE")
 echo ""
 echo -e "${GREEN}=== Build Complete ===${NC}"
 echo -e "${GREEN}Output file: ${OUTPUT_FILE}${NC}"
-echo -e "${GREEN}Final size: $(numfmt --to=iec-i --suffix=B $FINAL_SIZE)${NC}"
+echo -e "${GREEN}Final size: $(numfmt --to=iec-i --suffix=B $FINAL_SIZE 2>/dev/null || echo "$((FINAL_SIZE / 1024 / 1024))MB")${NC}"
 echo -e "${YELLOW}This firmware includes automatic bad block handling for NAND flash.${NC}"
 echo ""
