@@ -23,6 +23,21 @@ To build the firmware image with automatic bad block handling, run:
 
 This will create `T626Pro-squashfs-sysupgrade.bin` in the current directory.
 
+## Testing the Build
+
+To verify that the build process works correctly, run:
+
+```bash
+./test-build.sh
+```
+
+This test script will:
+- Clean up any previous builds
+- Run the build script
+- Verify the output file exists
+- Check that the file is a valid Squashfs filesystem
+- Verify JFFS2 EOF markers are present
+
 ## Build Process Details
 
 The build script performs the following steps:
